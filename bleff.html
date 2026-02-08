@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#667eea">
+    <title>Bleff - El Juego del Diccionario</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+            -webkit-overflow-scrolling: touch;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .screen {
+            display: none;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: #764ba2;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+
+        /* Setup Screen */
+        .player-input {
+            margin-bottom: 15px;
+        }
+
+        .player-input input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            transition: border-color 0.3s;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .player-input input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+            -webkit-tap-highlight-color: rgba(102, 126, 234, 0.3);
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            min-height: 48px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+            opacity: 0.8;
+        }
+
+        button.secondary {
+            background: #6c757d;
+            margin-top: 10px;
+        }
+
+        /* Flashcard Screen */
+        .flashcard {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: rgba(240, 147, 251, 0.3);
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        .flashcard:active {
+            transform: scale(0.98);
+        }
+
+        .flashcard-instruction {
+            text-align: center;
+            color: white;
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .current-reader {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .current-reader strong {
+            color: #856404;
+        }
+
+        .word-options {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .word-option {
+            padding: 15px;
+            margin: 10px 0;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            transition: all 0.2s;
+        }
+
+        .word-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .word-definition {
+            color: #666;
+            line-height: 1.5;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: max-height 0.4s ease, opacity 0.4s ease, margin-top 0.4s ease;
+        }
+
+        .flashcard.flipped .word-definition {
+            max-height: 200px;
+            opacity: 1;
+            margin-top: 8px;
+        }
+
+        .flashcard.flipped .flashcard-instruction {
+            display: none;
+        }
+
+        /* Score Screen */
+        .scoreboard {
+            margin: 30px 0;
+        }
+
+        .score-track {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .player-score {
+            display: flex;
+            align-items: center;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            position: relative;
+        }
+
+        .player-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 1.2em;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .player-info {
+            flex-grow: 1;
+        }
+
+        .player-name {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .score-input-section {
+            background: #e7f3ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .score-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .score-btn {
+            padding: 10px;
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .score-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .round-counter {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+
+        /* Winner Screen */
+        .winner-card {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .trophy {
+            font-size: 5em;
+            margin-bottom: 20px;
+        }
+
+        .winner-name {
+            font-size: 2em;
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .final-scores {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+        }
+
+        .final-score-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .final-score-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Rules */
+        .rules {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .rules h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .rules ul {
+            margin-left: 20px;
+        }
+
+        .rules li {
+            margin-bottom: 8px;
+        }
+
+        .add-player-btn {
+            background: #28a745;
+            width: auto;
+            padding: 10px 20px;
+            display: inline-block;
+            margin-right: 10px;
+            min-height: 44px;
+        }
+
+        .remove-player-btn {
+            background: #dc3545;
+            width: auto;
+            padding: 10px 20px;
+            display: inline-block;
+            min-height: 44px;
+        }
+        
+        /* Mejoras para touch en móviles */
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        button, .flashcard {
+            -webkit-tap-highlight-color: rgba(102, 126, 234, 0.3);
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            
+            .screen {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            button {
+                min-height: 48px;
+                padding: 16px;
+            }
+            
+            .flashcard {
+                padding: 20px;
+            }
+            
+            .word-title {
+                font-size: 1.2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Setup Screen -->
+        <div id="setupScreen" class="screen active">
+            <h1>🎭 Bleff</h1>
+            <p class="subtitle">El Juego del Diccionario</p>
+            
+            <div class="rules">
+                <h3>¿Cómo se juega?</h3>
+                <ul>
+                    <li>Cada ronda, un jugador lee 5 palabras raras del celular y elige una</li>
+                    <li>Los demás escriben definiciones falsas en papel</li>
+                    <li>El lector mezcla las falsas con la verdadera y las lee en voz alta</li>
+                    <li>Cada jugador vota cuál cree que es la verdadera</li>
+                    <li>Votar la correcta: <strong>+2 pts</strong> | Engañar a alguien: <strong>+1 pt</strong></li>
+                    <li>Escribir la definición correcta: <strong>+3 pts</strong></li>
+                    <li>Si nadie vota la correcta, el lector suma <strong>+2 pts</strong></li>
+                </ul>
+            </div>
+
+            <h2>Jugadores (2-6)</h2>
+            <div id="playerInputs">
+                <div class="player-input">
+                    <input type="text" placeholder="Nombre del Jugador 1" class="player-name-input">
+                </div>
+                <div class="player-input">
+                    <input type="text" placeholder="Nombre del Jugador 2" class="player-name-input">
+                </div>
+            </div>
+
+            <button class="add-player-btn" id="addPlayerBtn" ontouchend="addPlayer(event)" onclick="addPlayer(event)">+ Agregar Jugador</button>
+            <button class="remove-player-btn" id="removePlayerBtn" ontouchend="removePlayer(event)" onclick="removePlayer(event)">- Quitar Jugador</button>
+            <button id="startGameBtn" ontouchend="startGame(event)" onclick="startGame(event)">Comenzar Partida</button>
+        </div>
+
+        <!-- Transition Screen -->
+        <div id="transitionScreen" class="screen">
+            <div style="text-align: center; padding: 40px 20px;">
+                <h1>🎭 Bleff</h1>
+                
+                <div class="round-counter" id="transitionRoundCounter">Ronda 1</div>
+                
+                <div style="margin: 60px 0; padding: 40px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 20px; color: white;">
+                    <h2 style="color: white; font-size: 1.3em; margin-bottom: 20px;">Turno de:</h2>
+                    <div style="font-size: 2.5em; font-weight: bold; margin: 20px 0;" id="transitionReaderName">Jugador 1</div>
+                    <p style="font-size: 1.1em; margin-top: 20px;">Pasale el celular a esta persona</p>
+                </div>
+
+                <button id="readerReadyBtn" style="font-size: 1.2em; padding: 20px;" ontouchend="readerReady(event)" onclick="readerReady(event)">Estoy Listo</button>
+            </div>
+        </div>
+
+        <!-- Flashcard Screen -->
+        <div id="flashcardScreen" class="screen">
+            <h1>🎭 Bleff</h1>
+            
+            <div class="round-counter" id="roundCounter">Ronda 1</div>
+            
+            <div class="current-reader" id="currentReader">
+                <strong>Lector:</strong> <span id="readerName">Jugador 1</span>
+            </div>
+
+            <div class="flashcard" id="flashcard" ontouchend="toggleFlashcard(event)" onclick="toggleFlashcard(event)">
+                <div class="flashcard-instruction" id="flashcardInstruction">
+                    Tocá la flashcard para ver las definiciones 👇
+                </div>
+                <div class="word-options" id="wordOptions">
+                    <!-- Words will be inserted here by JavaScript -->
+                </div>
+            </div>
+
+            <button id="goToScoringBtn" ontouchend="goToScoring(event)" onclick="goToScoring(event)">Elegí mi palabra y listo</button>
+        </div>
+
+        <!-- Score Screen -->
+        <div id="scoreScreen" class="screen">
+            <h1>🎭 Bleff</h1>
+            
+            <div class="round-counter" id="scoreRoundCounter">Ronda 1</div>
+
+            <h2>Marcador</h2>
+            <div class="scoreboard">
+                <div class="score-track" id="scoreTrack">
+                    <!-- Player scores will be inserted here -->
+                </div>
+            </div>
+
+            <div class="score-input-section">
+                <h3>Anotar puntos:</h3>
+                <p style="margin-bottom: 10px;">Seleccioná un jugador y sumá puntos:</p>
+                <div id="scoreInputButtons">
+                    <!-- Score buttons will be inserted here -->
+                </div>
+            </div>
+
+            <button id="nextRoundBtn" ontouchend="nextRound(event)" onclick="nextRound(event)">Siguiente Ronda</button>
+        </div>
+
+        <!-- Winner Screen -->
+        <div id="winnerScreen" class="screen">
+            <div class="winner-card">
+                <div class="trophy">🏆</div>
+                <h1>¡GANADOR!</h1>
+                <div class="winner-name" id="winnerName">Jugador 1</div>
+                
+                <div class="final-scores">
+                    <h3 style="margin-bottom: 15px;">Puntuación Final</h3>
+                    <div id="finalScores">
+                        <!-- Final scores will be inserted here -->
+                    </div>
+                </div>
+
+                <button id="resetGameBtn" ontouchend="resetGame(event)" onclick="resetGame(event)">Nueva Partida</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dictionary with rare Spanish words
+        const dictionary = [
+            {
+                word: "ZASCANDIL",
+                definition: "Persona entrometida, bulliciosa y de poco provecho que anda de una parte a otra fingiendo que hace algo."
+            },
+            {
+                word: "PAVISOSO",
+                definition: "Persona simple y que se pasma o admira de todo sin gran motivo."
+            },
+            {
+                word: "GREGAL",
+                definition: "Viento que sopla del nordeste (punto entre el norte y el levante)."
+            },
+            {
+                word: "FALÚA",
+                definition: "Embarcación pequeña con dos palos y vela al tercio, destinada al servicio de los puertos."
+            },
+            {
+                word: "ALIFAFE",
+                definition: "Tumor o tumor crónico que suele venir en los corvejones de las caballerías."
+            },
+            {
+                word: "HIMENEO",
+                definition: "Casamiento, boda o celebración de las nupcias."
+            },
+            {
+                word: "PETRICOR",
+                definition: "Olor característico que produce la lluvia al caer sobre suelos secos."
+            },
+            {
+                word: "BAMBALINA",
+                definition: "Tira de lienzo pintada que cuelga del telar del teatro para completar la decoración."
+            },
+            {
+                word: "CUCAMONAS",
+                definition: "Carantoñas o halagos afectados que se hacen a alguien para conseguir algo."
+            },
+            {
+                word: "TIQUISMIQUIS",
+                definition: "Persona que se detiene en cosas menudas, que pone reparos a todo y es de difícil contentamiento."
+            },
+            {
+                word: "BEOCIO",
+                definition: "Persona ignorante, ruda o de escasa cultura."
+            },
+            {
+                word: "GÁRRULO",
+                definition: "Que habla mucho y sin sustancia, o que canta mucho (referido a pájaros)."
+            },
+            {
+                word: "DIPSOMANÍA",
+                definition: "Impulso irresistible hacia el consumo de bebidas alcohólicas de forma periódica."
+            },
+            {
+                word: "EFEBO",
+                definition: "Joven adolescente de belleza afeminada o delicada."
+            },
+            {
+                word: "CASQUIVANO",
+                definition: "Persona alegre, de poco juicio y fundamento, o que se prenda fácilmente de alguien."
+            }
+        ];
+
+        // Game state
+        let players = [];
+        let currentRound = 1;
+        let currentReaderIndex = 0;
+        let currentFlashcard = [];
+        let usedFlashcards = [];
+        const WINNING_SCORE = 20;
+
+        const playerColors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F'];
+
+        // Prevent duplicate execution (touch + click)
+        let lastActionTime = 0;
+        let lastActionName = '';
+        
+        function preventDuplicate(actionName) {
+            const now = Date.now();
+            if (actionName === lastActionName && now - lastActionTime < 500) {
+                return true; // Duplicate, skip
+            }
+            lastActionTime = now;
+            lastActionName = actionName;
+            return false; // Not duplicate, proceed
+        }
+
+        function addPlayer(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            if (preventDuplicate('addPlayer')) return;
+            const inputs = document.getElementById('playerInputs');
+            const currentCount = inputs.children.length;
+            if (currentCount < 6) {
+                const div = document.createElement('div');
+                div.className = 'player-input';
+                div.innerHTML = `<input type="text" placeholder="Nombre del Jugador ${currentCount + 1}" class="player-name-input">`;
+                inputs.appendChild(div);
+            } else {
+                alert('Máximo 6 jugadores');
+            }
+        }
+
+        function removePlayer(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            if (preventDuplicate('removePlayer')) return;
+            const inputs = document.getElementById('playerInputs');
+            if (inputs.children.length > 2) {
+                inputs.removeChild(inputs.lastChild);
+            } else {
+                alert('Mínimo 2 jugadores');
+            }
+        }
+
+        function startGame(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            if (preventDuplicate('startGame')) return;
+            
+            console.log('Bleff: Iniciando partida...');
+            const inputs = document.querySelectorAll('.player-name-input');
+            players = [];
+            
+            inputs.forEach((input, index) => {
+                const name = input.value.trim();
+                if (name) {
+                    players.push({
+                        name: name,
+                        score: 0,
+                        color: playerColors[index]
+                    });
+                }
+            });
+
+            console.log('Bleff: Jugadores registrados:', players.length);
+
+            if (players.length < 2) {
+                alert('Necesitás al menos 2 jugadores');
+                return;
+            }
+
+            currentRound = 1;
+            currentReaderIndex = 0;
+            usedFlashcards = [];
+            
+            console.log('Bleff: Mostrando transición...');
+            showTransition();
+        }
+
+        function getRandomFlashcard() {
+            // Get 5 random words that haven't been used
+            const available = dictionary.filter(word => 
+                !usedFlashcards.some(fc => fc.some(w => w.word === word.word))
+            );
+
+            if (available.length < 5) {
+                // Reset if we've used all words
+                usedFlashcards = [];
+                return getRandomFlashcard();
+            }
+
+            const flashcard = [];
+            const usedIndices = [];
+
+            while (flashcard.length < 5) {
+                const randomIndex = Math.floor(Math.random() * available.length);
+                if (!usedIndices.includes(randomIndex)) {
+                    usedIndices.push(randomIndex);
+                    flashcard.push(available[randomIndex]);
+                }
+            }
+
+            usedFlashcards.push(flashcard);
+            return flashcard;
+        }
+
+        function showTransition() {
+            document.getElementById('transitionRoundCounter').textContent = `Ronda ${currentRound}`;
+            document.getElementById('transitionReaderName').textContent = players[currentReaderIndex].name;
+            showScreen('transitionScreen');
+        }
+
+        function readerReady(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            if (preventDuplicate('readerReady')) return;
+            showScreen('flashcardScreen');
+            loadNewFlashcard();
+        }
+
+        function loadNewFlashcard() {
+            currentFlashcard = getRandomFlashcard();
+            
+            document.getElementById('roundCounter').textContent = `Ronda ${currentRound}`;
+            document.getElementById('readerName').textContent = players[currentReaderIndex].name;
+
+            const flashcard = document.getElementById('flashcard');
+            flashcard.classList.remove('flipped');
+
+            const wordOptions = document.getElementById('wordOptions');
+            wordOptions.innerHTML = '';
+
+            currentFlashcard.forEach((wordObj, index) => {
+                const div = document.createElement('div');
+                div.className = 'word-option';
+                div.innerHTML = `
+                    <div class="word-title">${wordObj.word}</div>
+                    <div class="word-definition">${wordObj.definition}</div>
+                `;
+                wordOptions.appendChild(div);
+            });
+
+            // Update instruction text
+            document.getElementById('flashcardInstruction').textContent = 'Tocá la flashcard para ver las definiciones 👇';
+        }
+
+        function toggleFlashcard(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            if (preventDuplicate('toggleFlashcard')) return;
+            const flashcard = document.getElementById('flashcard');
+            const instruction = document.getElementById('flashcardInstruction');
+            
+            if (flashcard.classList.contains('flipped')) {
+                flashcard.classList.remove('flipped');
+                instruction.textContent = 'Tocá la flashcard para ver las definiciones 👇';
+            } else {
+                flashcard.classList.add('flipped');
+                instruction.textContent = 'Tocá nuevamente para ocultar las definiciones 👆';
+            }
+        }
+
+        function goToScoring(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            if (preventDuplicate('goToScoring')) return;
+            showScreen('scoreScreen');
+            updateScoreboard();
+            createScoreButtons();
+            document.getElementById('scoreRoundCounter').textContent = `Ronda ${currentRound}`;
+        }
+
+        function updateScoreboard() {
+            const scoreTrack = document.getElementById('scoreTrack');
+            scoreTrack.innerHTML = '';
+
+            // Sort players by score for display
+            const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+
+            sortedPlayers.forEach(player => {
+                const percentage = Math.min((player.score / WINNING_SCORE) * 100, 100);
+                
+                const div = document.createElement('div');
+                div.className = 'player-score';
+                div.innerHTML = `
+                    <div class="player-avatar" style="background-color: ${player.color}">
+                        ${player.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div class="player-info">
+                        <div class="player-name">${player.name}</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${percentage}%; background-color: ${player.color}">
+                                ${player.score}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                scoreTrack.appendChild(div);
+            });
+        }
+
+        function createScoreButtons() {
+            const container = document.getElementById('scoreInputButtons');
+            container.innerHTML = '';
+
+            players.forEach((player, index) => {
+                const playerSection = document.createElement('div');
+                playerSection.style.marginBottom = '15px';
+                
+                const label = document.createElement('div');
+                label.style.fontWeight = 'bold';
+                label.style.marginBottom = '5px';
+                label.textContent = player.name;
+                playerSection.appendChild(label);
+
+                const buttonsDiv = document.createElement('div');
+                buttonsDiv.className = 'score-buttons';
+
+                const scores = [
+                    { points: 1, label: '+1 (Engañó)' },
+                    { points: 2, label: '+2 (Votó correcta)' },
+                    { points: 3, label: '+3 (Escribió correcta)' },
+                    { points: 2, label: '+2 (Nadie votó)' }
+                ];
+
+                scores.forEach(score => {
+                    const btn = document.createElement('button');
+                    btn.className = 'score-btn';
+                    btn.textContent = score.label;
+                    btn.setAttribute('ontouchend', `addScore(${index}, ${score.points}, event)`);
+                    btn.setAttribute('onclick', `addScore(${index}, ${score.points}, event)`);
+                    buttonsDiv.appendChild(btn);
+                });
+
+                playerSection.appendChild(buttonsDiv);
+                container.appendChild(playerSection);
+            });
+        }
+
+        function addScore(playerIndex, points, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            if (preventDuplicate(`addScore-${playerIndex}-${points}`)) return;
+            players[playerIndex].score += points;
+            updateScoreboard();
+
+            // Check for winner
+            if (players[playerIndex].score >= WINNING_SCORE) {
+                setTimeout(() => {
+                    showWinner(players[playerIndex]);
+                }, 500);
+            }
+        }
+
+        function nextRound(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            if (preventDuplicate('nextRound')) return;
+            // Check if anyone won
+            const winner = players.find(p => p.score >= WINNING_SCORE);
+            if (winner) {
+                showWinner(winner);
+                return;
+            }
+
+            currentRound++;
+            currentReaderIndex = (currentReaderIndex + 1) % players.length;
+            
+            showTransition();
+        }
+
+        function showWinner(winner) {
+            document.getElementById('winnerName').textContent = winner.name;
+            
+            const finalScores = document.getElementById('finalScores');
+            finalScores.innerHTML = '';
+
+            const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+
+            sortedPlayers.forEach((player, index) => {
+                const div = document.createElement('div');
+                div.className = 'final-score-item';
+                const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+                div.innerHTML = `
+                    <span>${medal} ${player.name}</span>
+                    <strong>${player.score} puntos</strong>
+                `;
+                finalScores.appendChild(div);
+            });
+
+            showScreen('winnerScreen');
+        }
+
+        function resetGame(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            if (preventDuplicate('resetGame')) return;
+            players = [];
+            currentRound = 1;
+            currentReaderIndex = 0;
+            usedFlashcards = [];
+            
+            // Clear player inputs
+            const inputs = document.getElementById('playerInputs');
+            inputs.innerHTML = `
+                <div class="player-input">
+                    <input type="text" placeholder="Nombre del Jugador 1" class="player-name-input">
+                </div>
+                <div class="player-input">
+                    <input type="text" placeholder="Nombre del Jugador 2" class="player-name-input">
+                </div>
+            `;
+            
+            showScreen('setupScreen');
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        // No need for DOMContentLoaded - using inline event handlers for iOS compatibility
+    </script>
+</body>
+</html>
