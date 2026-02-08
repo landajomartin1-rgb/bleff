@@ -127,9 +127,9 @@
         /* Flashcard Screen */
         .flashcard {
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            padding: 30px;
+            padding: 20px;
             border-radius: 15px;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             cursor: pointer;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -139,6 +139,8 @@
             user-select: none;
             -webkit-user-select: none;
             -webkit-touch-callout: none;
+            max-height: 60vh;
+            overflow-y: auto;
         }
 
         .flashcard:active {
@@ -148,12 +150,12 @@
         .flashcard-instruction {
             text-align: center;
             color: white;
-            font-size: 1.1em;
+            font-size: 0.95em;
             font-weight: bold;
-            margin-bottom: 20px;
-            padding: 15px;
+            margin-bottom: 12px;
+            padding: 10px;
             background: rgba(255,255,255,0.2);
-            border-radius: 10px;
+            border-radius: 8px;
             animation: pulse 2s infinite;
         }
 
@@ -176,14 +178,14 @@
 
         .word-options {
             background: white;
-            padding: 20px;
+            padding: 15px;
             border-radius: 10px;
-            margin-top: 20px;
+            margin-top: 12px;
         }
 
         .word-option {
-            padding: 15px;
-            margin: 10px 0;
+            padding: 12px;
+            margin: 8px 0;
             background: white;
             border-radius: 8px;
             border-left: 4px solid #667eea;
@@ -191,15 +193,16 @@
         }
 
         .word-title {
-            font-size: 1.3em;
+            font-size: 1.15em;
             font-weight: bold;
             color: #667eea;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .word-definition {
             color: #666;
-            line-height: 1.5;
+            line-height: 1.4;
+            font-size: 0.9em;
             max-height: 0;
             overflow: hidden;
             opacity: 0;
@@ -209,7 +212,7 @@
         .flashcard.flipped .word-definition {
             max-height: 200px;
             opacity: 1;
-            margin-top: 8px;
+            margin-top: 6px;
         }
 
         .flashcard.flipped .flashcard-instruction {
@@ -527,6 +530,7 @@
                 </div>
             </div>
 
+            <button id="undoBtn" ontouchend="undoLastScore(event)" onclick="undoLastScore(event)" class="secondary" style="background: #dc3545;">↩️ Deshacer último punto</button>
             <button id="nextRoundBtn" ontouchend="nextRound(event)" onclick="nextRound(event)">Siguiente Ronda</button>
         </div>
 
@@ -550,68 +554,107 @@
     </div>
 
     <script>
-        // Dictionary with rare Spanish words
+        // Dictionary with rare Spanish words - varied definition formats
         const dictionary = [
-            {
-                word: "ZASCANDIL",
-                definition: "Persona entrometida, bulliciosa y de poco provecho que anda de una parte a otra fingiendo que hace algo."
-            },
-            {
-                word: "PAVISOSO",
-                definition: "Persona simple y que se pasma o admira de todo sin gran motivo."
-            },
-            {
-                word: "GREGAL",
-                definition: "Viento que sopla del nordeste (punto entre el norte y el levante)."
-            },
-            {
-                word: "FALÚA",
-                definition: "Embarcación pequeña con dos palos y vela al tercio, destinada al servicio de los puertos."
-            },
-            {
-                word: "ALIFAFE",
-                definition: "Tumor o tumor crónico que suele venir en los corvejones de las caballerías."
-            },
-            {
-                word: "HIMENEO",
-                definition: "Casamiento, boda o celebración de las nupcias."
-            },
-            {
-                word: "PETRICOR",
-                definition: "Olor característico que produce la lluvia al caer sobre suelos secos."
-            },
-            {
-                word: "BAMBALINA",
-                definition: "Tira de lienzo pintada que cuelga del telar del teatro para completar la decoración."
-            },
-            {
-                word: "CUCAMONAS",
-                definition: "Carantoñas o halagos afectados que se hacen a alguien para conseguir algo."
-            },
-            {
-                word: "TIQUISMIQUIS",
-                definition: "Persona que se detiene en cosas menudas, que pone reparos a todo y es de difícil contentamiento."
-            },
-            {
-                word: "BEOCIO",
-                definition: "Persona ignorante, ruda o de escasa cultura."
-            },
-            {
-                word: "GÁRRULO",
-                definition: "Que habla mucho y sin sustancia, o que canta mucho (referido a pájaros)."
-            },
-            {
-                word: "DIPSOMANÍA",
-                definition: "Impulso irresistible hacia el consumo de bebidas alcohólicas de forma periódica."
-            },
-            {
-                word: "EFEBO",
-                definition: "Joven adolescente de belleza afeminada o delicada."
-            },
-            {
-                word: "CASQUIVANO",
-                definition: "Persona alegre, de poco juicio y fundamento, o que se prenda fácilmente de alguien."
-            }
+            { word: "ZASCANDIL", definition: "Persona entrometida, bulliciosa y de poco provecho que anda de una parte a otra fingiendo que hace algo." },
+            { word: "PAVISOSO", definition: "Tonto." },
+            { word: "GREGAL", definition: "Viento del nordeste." },
+            { word: "FALÚA", definition: "Embarcación pequeña con dos palos y vela al tercio, destinada al servicio de los puertos." },
+            { word: "ALIFAFE", definition: "Tumor en caballos." },
+            { word: "HIMENEO", definition: "Boda." },
+            { word: "PETRICOR", definition: "Olor característico que produce la lluvia al caer sobre suelos secos, especialmente en zonas áridas." },
+            { word: "BAMBALINA", definition: "Tira de lienzo pintada que cuelga del telar del teatro para completar la decoración de la escena." },
+            { word: "CUCAMONAS", definition: "Carantoñas, halagos." },
+            { word: "TIQUISMIQUIS", definition: "Persona quisquillosa." },
+            { word: "BEOCIO", definition: "Ignorante, rudo." },
+            { word: "GÁRRULO", definition: "Parlanchín." },
+            { word: "DIPSOMANÍA", definition: "Impulso irresistible hacia el consumo de bebidas alcohólicas." },
+            { word: "EFEBO", definition: "Joven de belleza delicada." },
+            { word: "CASQUIVANO", definition: "De poco juicio." },
+            { word: "ZAFIO", definition: "Tosco." },
+            { word: "MEQUETREFE", definition: "Entrometido." },
+            { word: "CACHIVACHE", definition: "Trasto." },
+            { word: "ARTILUGIO", definition: "Mecanismo, aparato." },
+            { word: "GALIMATÍAS", definition: "Lenguaje confuso e ininteligible por la mezcla desordenada de ideas o palabras." },
+            { word: "BABIECA", definition: "Bobo." },
+            { word: "ALCORZA", definition: "Pasta de azúcar, almendra y clara de huevo que se usa para hacer decoraciones o dulces." },
+            { word: "BATIBOLEO", definition: "Confusión ruidosa." },
+            { word: "BODRIO", definition: "Cosa mal hecha." },
+            { word: "CAGARRUTA", definition: "Excremento." },
+            { word: "CANDONGA", definition: "Burla." },
+            { word: "CHIRIMBOLO", definition: "Utensilio, cachivache." },
+            { word: "CICATERO", definition: "Tacaño." },
+            { word: "CORAMBRE", definition: "Conjunto de cueros o pieles que se han desollado de los animales para curtirlas." },
+            { word: "DESBARAJUSTE", definition: "Desorden grande." },
+            { word: "ESTRAFALARIO", definition: "Extravagante, raro." },
+            { word: "FARINÁCEO", definition: "Harinoso." },
+            { word: "FULLERO", definition: "Tramposo." },
+            { word: "GANDUL", definition: "Holgazán." },
+            { word: "GAZMOÑO", definition: "Mojigato, que finge devoción o virtud." },
+            { word: "HARAGÁN", definition: "Vago." },
+            { word: "JACTANCIA", definition: "Alabanza propia y excesiva." },
+            { word: "LATROCINIO", definition: "Robo." },
+            { word: "LISONJA", definition: "Alabanza exagerada para agradar a alguien y conseguir de él alguna cosa." },
+            { word: "MALANDRÍN", definition: "Malhechor, perverso." },
+            { word: "MANDRIA", definition: "Cobarde." },
+            { word: "MENTECATO", definition: "Tonto." },
+            { word: "MEZQUINO", definition: "Avaro." },
+            { word: "MONSERGA", definition: "Lenguaje confuso o pesado que resulta molesto para quien lo escucha." },
+            { word: "MORLACO", definition: "Toro bravo." },
+            { word: "MORRALLA", definition: "Cosas de poco valor." },
+            { word: "PÁNFILO", definition: "Lento, flemático." },
+            { word: "PAPANATAS", definition: "Bobo." },
+            { word: "PARDILLO", definition: "Ingenuo." },
+            { word: "PATOCHADA", definition: "Dicho necio, disparate." },
+            { word: "PELAFUSTÁN", definition: "Hombre despreciable." },
+            { word: "PERENDENGUE", definition: "Adorno de poco valor que cuelga como pendiente." },
+            { word: "PETIMETRE", definition: "Presumido de elegante." },
+            { word: "PILLASTRE", definition: "Pícaro." },
+            { word: "PITORREO", definition: "Burla, broma." },
+            { word: "PLÚMBEO", definition: "Pesado." },
+            { word: "POLTRÓN", definition: "Perezoso." },
+            { word: "POSTÍN", definition: "Elegancia afectada, lujo ostentoso que alguien se da para impresionar." },
+            { word: "PREÑADO", definition: "Cargado, lleno." },
+            { word: "PROSAPIA", definition: "Linaje." },
+            { word: "QUIMERA", definition: "Ilusión, fantasía." },
+            { word: "RALEA", definition: "Casta o linaje, especialmente cuando es malo o despreciable." },
+            { word: "RETAHÍLA", definition: "Serie de muchas cosas." },
+            { word: "RUFIÁN", definition: "Hombre sin honor." },
+            { word: "SANDIO", definition: "Necio." },
+            { word: "SOFLAMA", definition: "Discurso persuasivo pero engañoso que busca impresionar con palabras rebuscadas." },
+            { word: "TAGAROTE", definition: "Escribiente." },
+            { word: "TAHÚR", definition: "Jugador tramposo." },
+            { word: "TAIMADO", definition: "Astuto, bellaco." },
+            { word: "TARAMBANA", definition: "Atolondrado." },
+            { word: "TRASGO", definition: "Duende travieso que hace travesuras domésticas como esconder objetos o hacer ruidos." },
+            { word: "TROTACALLES", definition: "Callejero." },
+            { word: "TUNANTE", definition: "Pícaro." },
+            { word: "VELEIDOSO", definition: "Inconstante." },
+            { word: "VÁSTAGO", definition: "Descendiente, hijo o hija de una persona, especialmente cuando se habla de familias nobles." },
+            { word: "VEJESTORIO", definition: "Muy viejo." },
+            { word: "ZAHERIR", definition: "Ofender." },
+            { word: "ZAMACUCO", definition: "Torpe." },
+            { word: "ZARANDAJA", definition: "Cosa sin importancia." },
+            { word: "ZOPENCO", definition: "Tonto, torpe." },
+            { word: "ZURCIR", definition: "Coser." },
+            { word: "AÑAGAZA", definition: "Artificio para engañar." },
+            { word: "BALDÓN", definition: "Ofensa grave." },
+            { word: "BELITRE", definition: "Ruin, pícaro." },
+            { word: "BISOJO", definition: "Bizco." },
+            { word: "BURDÉGANO", definition: "Animal híbrido resultante del cruce entre un caballo y una burra." },
+            { word: "CENCEÑO", definition: "Delgado." },
+            { word: "COGNOMENTO", definition: "Sobrenombre, apodo que se añade al nombre propio de una persona." },
+            { word: "DESAGUISADO", definition: "Ofensa, agravio." },
+            { word: "DONAIRE", definition: "Gracia." },
+            { word: "ERRAJ", definition: "Sin cultivar." },
+            { word: "FÁMULO", definition: "Criado, sirviente que trabaja en una casa o institución." },
+            { word: "HATAJO", definition: "Grupo pequeño." },
+            { word: "JÁQUIMA", definition: "Cabezada para caballos." },
+            { word: "MARRAMIAU", definition: "Gato." },
+            { word: "OROPEL", definition: "Cosa de pura apariencia." },
+            { word: "PALIDUCHO", definition: "Pálido." },
+            { word: "PELAMBRE", definition: "Conjunto de pelo." },
+            { word: "PUSILÁNIME", definition: "Falto de valor, cobarde." }
         ];
 
         // Game state
@@ -620,6 +663,7 @@
         let currentReaderIndex = 0;
         let currentFlashcard = [];
         let usedFlashcards = [];
+        let scoreHistory = []; // Track score changes for undo
         const WINNING_SCORE = 20;
 
         const playerColors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F'];
@@ -803,6 +847,7 @@
             showScreen('scoreScreen');
             updateScoreboard();
             createScoreButtons();
+            updateUndoButton();
             document.getElementById('scoreRoundCounter').textContent = `Ronda ${currentRound}`;
         }
 
@@ -879,14 +924,54 @@
                 event.stopPropagation();
             }
             if (preventDuplicate(`addScore-${playerIndex}-${points}`)) return;
+            
+            // Save to history for undo
+            scoreHistory.push({
+                playerIndex: playerIndex,
+                points: points,
+                playerName: players[playerIndex].name
+            });
+            
             players[playerIndex].score += points;
             updateScoreboard();
+            updateUndoButton();
 
             // Check for winner
             if (players[playerIndex].score >= WINNING_SCORE) {
                 setTimeout(() => {
                     showWinner(players[playerIndex]);
                 }, 500);
+            }
+        }
+
+        function undoLastScore(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            if (preventDuplicate('undoLastScore')) return;
+            
+            if (scoreHistory.length === 0) {
+                alert('No hay puntos para deshacer');
+                return;
+            }
+            
+            const lastAction = scoreHistory.pop();
+            players[lastAction.playerIndex].score -= lastAction.points;
+            updateScoreboard();
+            updateUndoButton();
+        }
+
+        function updateUndoButton() {
+            const undoBtn = document.getElementById('undoBtn');
+            if (undoBtn) {
+                if (scoreHistory.length === 0) {
+                    undoBtn.disabled = true;
+                    undoBtn.style.opacity = '0.5';
+                } else {
+                    undoBtn.disabled = false;
+                    undoBtn.style.opacity = '1';
+                }
             }
         }
 
@@ -903,6 +988,9 @@
                 return;
             }
 
+            // Clear score history for new round
+            scoreHistory = [];
+            
             currentRound++;
             currentReaderIndex = (currentReaderIndex + 1) % players.length;
             
